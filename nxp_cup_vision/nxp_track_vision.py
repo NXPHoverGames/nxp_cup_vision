@@ -42,6 +42,9 @@ class NXPTrackVision(Node):
         self.debugLineMethodUsed = False
         
         self.timeStamp = self.get_clock().now().nanoseconds
+        #Camera image size parameters
+        self.imageHeight = 240
+        self.imageWidth = 320
         
         #Pixy image size parameters
         self.pixyImageWidth = 78
@@ -94,6 +97,11 @@ class NXPTrackVision(Node):
                 int(self.pixyImageWidth*0.2),self.pixyImageHeight],
                 [int((self.pixyImageWidth*0.8)-self.bogusOffsetNumber),0,
                 int(self.pixyImageWidth*0.8),self.pixyImageHeight]]
+                
+
+        self.pts1 = np.float32([[0, self.imageHeight/3*2], [self.imageWidth/3, self.imageHeight/2], [self.imageWidth, self.imageHeight/3*2], [self.imageWidth*2/3, self.imageHeight/2]])
+        self.pts2 = np.float32([[0, self.imageHeight], [self.imageWidth/3, 0], [self.imageWidth, self.imageHeight], [self.imageWidth*2/3, 0]])
+        self.matrix = cv2.getPerspectiveTransform(self.pts1, self.pts2)
 
 
     def findLines(self, passedImage):
@@ -428,11 +436,10 @@ class NXPTrackVision(Node):
     def pixyImageCallback(self, data):    
         
         # Scene from subscription callback
-        scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')
-
-        #deep copy and pyramid down image to reduce resolution
-        scenePyr = copy.deepcopy(scene)
-        sceneDetect = copy.deepcopy(scenePyr)
+        scene = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding='bgr8')      
+        scene = cv2.warpPerspective(scene, self.matrix, (self.imageWidth, self.imageHeight), cv2.BORDER_CONSTANT, 0)
+        
+        sceneDetect = copy.deepcopy(scene)
 
         #find lines function
         sceneDetected = self.findLines(sceneDetect)
