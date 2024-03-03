@@ -15,7 +15,6 @@ from rcl_interfaces.msg import Parameter
 from rcl_interfaces.msg import ParameterType
 from rcl_interfaces.msg import ParameterDescriptor
 import sensor_msgs.msg
-from time import sleep
 from synapse_msgs.msg import PixyVector,Status
 from cv_bridge import CvBridge
 from rclpy.qos import QoSProfile
@@ -29,67 +28,18 @@ class NXPTrackVision(Node):
     def __init__(self):
 
         super().__init__("nxp_track_vision")
-
-        # Get paramaters or defaults
-        pyramid_down_descriptor = ParameterDescriptor(
-            type=ParameterType.PARAMETER_INTEGER,
-            description='Number of times to pyramid image down.')
-
-        camera_image_topic_descriptor = ParameterDescriptor(
-            type=ParameterType.PARAMETER_STRING,
-            description='Camera image topic.')
         
-        debug_image_topic_descriptor = ParameterDescriptor(
-            type=ParameterType.PARAMETER_STRING,
-            description='Run in debug mode and publish to debug image topic')
-
-        namespace_topic_descriptor = ParameterDescriptor(
-            type=ParameterType.PARAMETER_STRING,
-            description='Namespaceing if needed.')
-
-        mask_ratio_array_descriptor = ParameterDescriptor(
-            type=ParameterType.PARAMETER_DOUBLE_ARRAY,
-            description='Array for mask ratio')
-        
-        self.declare_parameter("pyramid_down", 0, 
-            pyramid_down_descriptor)
-        
-        self.declare_parameter("camera_image", "Pixy2CMUcam5_sensor", 
-            camera_image_topic_descriptor)
-        
-        self.declare_parameter("debug_image", "/topic", 
-            debug_image_topic_descriptor)
-
-        self.declare_parameter("namespace", "", 
-            namespace_topic_descriptor)
-
-        self.declare_parameter("mask_ratio_array", [0.0, 0.0], #[0.44, 0.32]
-            mask_ratio_array_descriptor)
-
-        self.pyrDown = self.get_parameter("pyramid_down").value
-
-        self.cameraImageTopic = self.get_parameter("camera_image").value
-
-        self.debugImageTopic = self.get_parameter("debug_image").value
-
-        self.namespaceTopic = self.get_parameter("namespace").value
-
-        self.mask_ratio_array = self.get_parameter("mask_ratio_array").value
-        
-
         #setup CvBridge
         self.bridge = CvBridge()
         
         #Rectangualr area to remove from image calculation to 
         # eliminate the vehicle. Used as ratio of overall image width and height
         # "width ratio,height ratio"
-        self.maskRectRatioWidthHeight = np.array([float(self.mask_ratio_array[0]),float(self.mask_ratio_array[1])])
+        self.maskRectRatioWidthHeight = np.array([0.0,0.0])
         
         #Bool for generating and publishing the debug image evaluation
-        self.debug = False
+        self.debug = True
         
-        if self.debugImageTopic != "":
-            self.debug = True
         self.timeStamp = self.get_clock().now().nanoseconds
         
         #Pixy image size parameters
@@ -101,6 +51,7 @@ class NXPTrackVision(Node):
             'camera/image_raw/compressed', 
             self.pixyImageCallback, 
             qos_profile_sensor_data)
+        
         self.b3rb_status = self.create_subscription(Status,'/cerebri/out/status',self.statusCallback,qos_profile_sensor_data)
 
         #Publishers
@@ -118,6 +69,7 @@ class NXPTrackVision(Node):
         self.lineMethodUsed = 0
 
         (self.pX0, self.pY0, self.pX1, self.pY1) = (2,3,0,1) #(0,1,2,3)
+
         #Testing
         self.useBogusData=False
         self.publishSecondVector=True
@@ -201,7 +153,7 @@ class NXPTrackVision(Node):
             passedImageGrayThresh, mask=maskVehicle)
         
         #Find contours
-        cnts, hierarchy = cv2.findContours(passedImageGrayThreshMasked.copy(),
+        cnts = cv2.findContours(passedImageGrayThreshMasked.copy(),
             cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
         
         returnedImageDebug=passedImage
@@ -479,9 +431,6 @@ class NXPTrackVision(Node):
 
         #deep copy and pyramid down image to reduce resolution
         scenePyr = copy.deepcopy(scene)
-        if self.pyrDown > 0:
-            for i in range(self.pyrDown):
-                scenePyr = cv2.pyrDown(scenePyr)
         sceneDetect = copy.deepcopy(scenePyr)
 
         #find lines function
