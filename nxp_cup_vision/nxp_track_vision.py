@@ -39,6 +39,7 @@ class NXPTrackVision(Node):
         
         #Bool for generating and publishing the debug image evaluation
         self.debug = True
+        self.debugLineMethodUsed = False
         
         self.timeStamp = self.get_clock().now().nanoseconds
         
@@ -69,7 +70,7 @@ class NXPTrackVision(Node):
         self.lineMethodUsed = 0
 
         (self.pX0, self.pY0, self.pX1, self.pY1) = (2,3,0,1) #(0,1,2,3)
-
+        
         #Testing
         self.useBogusData=False
         self.publishSecondVector=True
@@ -153,7 +154,7 @@ class NXPTrackVision(Node):
             passedImageGrayThresh, mask=maskVehicle)
         
         #Find contours
-        cnts = cv2.findContours(passedImageGrayThreshMasked.copy(),
+        cnts, hierarchy = cv2.findContours(passedImageGrayThreshMasked.copy(),
             cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
         
         returnedImageDebug=passedImage
@@ -270,7 +271,7 @@ class NXPTrackVision(Node):
                 topLeftYScaled = int(topLeftY*(self.pixyImageWidth/imageWidth))
                 bottomRightYScaled = int(bottomRightY*(self.pixyImageWidth/imageWidth))
 
-                if self.debug:
+                if self.debugLineMethodUsed:
                     self.get_logger().info('\n\nlineMethodUsed:{:d},lineMethodsUsedCount:{:s}'.format(
                         self.lineMethodUsed,str(self.lineMethodsUsedCount)))
                     self.get_logger().info('vectorX:{:f},vectorY:{:f},linePointX:{:f},linePointY:{:f}'.format(
