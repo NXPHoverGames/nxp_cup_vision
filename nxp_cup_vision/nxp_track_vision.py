@@ -32,13 +32,17 @@ class NXPTrackVision(Node):
         #setup CvBridge
         self.bridge = CvBridge()
         
-        #Rectangualr area to remove from image calculation to 
+        #Rectangular area to remove from image calculation to 
         # eliminate the vehicle. Used as ratio of overall image width and height
         # "width ratio,height ratio"
         self.maskRectRatioWidthHeight = np.array([0.0,0.0])
         
         #Bool for generating and publishing the debug image evaluation
-        self.debug = True
+        
+        debug_descriptor = ParameterDescriptor(type=ParameterType.PARAMETER_BOOL, description='Enable debug mode for nxp_track_vision_node')
+        self.declare_parameter("debug", True, debug_descriptor)
+        self.debug = self.get_parameter("debug").value
+
         self.debugLineMethodUsed = False
         
         self.timeStamp = self.get_clock().now().nanoseconds
