@@ -59,8 +59,8 @@ class NXPTrackVision(Node):
         self.b3rb_status = self.create_subscription(Status,'/cerebri/out/status',self.statusCallback,qos_profile_sensor_data)
 
         #Publishers
-        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.Image,
-            "/debugImage", 0)
+        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.CompressedImage,
+            "nxp_cup/debug_image", 0)
         
         self.PixyVectorPub = self.create_publisher(PixyVector,
             "cerebri/in/pixy_vector", 0)
@@ -446,7 +446,7 @@ class NXPTrackVision(Node):
         
         if self.debug:
             #publish debug image
-            msg = self.bridge.cv2_to_imgmsg(sceneDetected, "bgr8")
+            msg = self.bridge.cv2_to_compressed_imgmsg(sceneDetected)
             msg.header.stamp = data.header.stamp
             self.debugDetectionImagePub.publish(msg)
 
