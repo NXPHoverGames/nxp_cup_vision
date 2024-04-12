@@ -63,13 +63,15 @@ class NXPTrackVision(Node):
         self.b3rb_status = self.create_subscription(Status,'/cerebri/out/status',self.statusCallback,qos_profile_sensor_data)
 
         #Publishers
-        self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.CompressedImage,
-            "nxp_cup/debug_image", 0)
         
         self.PixyVectorPub = self.create_publisher(PixyVector,
             "cerebri/in/pixy_vector", 0)
             
         self.JoystickPub = self.create_publisher(sensor_msgs.msg.Joy,"/cerebri/in/joy",0)
+
+        if self.debug:  
+            self.debugDetectionImagePub = self.create_publisher(sensor_msgs.msg.CompressedImage,
+                "nxp_cup/debug_image", 0)
         
         #Only used for debugging line finding issues
         self.lineFindPrintDebug = False
@@ -430,7 +432,6 @@ class NXPTrackVision(Node):
             #self.JoystickPub.publish(joystick_msg)
         #If robot is in AUTO mode -> arming the robot
         elif(data.mode==2 and data.arming!=2):
-            #sleep(5.0)
             joystick_msg=sensor_msgs.msg.Joy()
             joystick_msg.header.stamp=ROSClock().now().to_msg()
             joystick_msg.axes=[0.0,0.0,0.0,0.0]
